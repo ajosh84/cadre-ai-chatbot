@@ -37,7 +37,8 @@ Facilitation, AI Engineering, AI Agents.
 - System prompt + KB content are separate from route logic — keep them in their own module
   (`backend/prompts.py` or similar) so they're easy to find and edit independently of request
   handling.
-- Streaming responses via SSE, not polling.
+- `/api/chat` returns a single JSON response (not SSE streaming) — a deliberate scope trade-off
+  for the time budget, not a rejection of streaming on principle. See DECISIONS.md.
 - Prefer small, focused commits with descriptive messages over one large commit at the end.
 
 ## Explicit boundaries — do not build these without asking

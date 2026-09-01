@@ -50,7 +50,8 @@ of actually running it.
 
 ## System Design — v1 (what's actually built)
 
-- Direct async request → OpenRouter call → streamed response (SSE), no queue.
+- Direct async request → OpenRouter call → single JSON response (not SSE — see "Streaming vs.
+  single response" below), no queue.
 - Static system-prompt + KB content injected per request (no vector DB / RAG infra).
   Rationale: KB is small (one company's FAQ-level content); embeddings/retrieval
   infra would be over-engineering at this scale, not a strength.
@@ -124,6 +125,8 @@ Free-tier models considered and rejected: this bot is client-facing and needs co
 instruction-following (grounding, escalation behavior), which is worth paying a small
 amount for over free models with less predictable behavior.
 
+---
+
 ## Verification — Phase 2 manual test pass
 
 Tested via curl: 6 in-scope questions, 3 out-of-scope/escalation questions, 2 adversarial
@@ -136,3 +139,12 @@ Also caught and fixed during this phase: `backend/app.py` initially imported
 `from prompts import SYSTEM_PROMPT` (module-not-found error) instead of
 `from backend.prompts import SYSTEM_PROMPT` — gave Claude Code the exact traceback,
 it corrected the import path immediately.
+
+## Streaming vs. single response
+**Decision:** /api/chat returns a single JSON response, not SSE streaming.
+**Why:** CLAUDE.md originally specified SSE as a convention; plan.md's Phase 3 explicitly
+allowed falling back to single-response "if streaming eats too much time" — it did, given
+the 4-hour budget. A typing indicator provides adequate perceived responsiveness without
+the added complexity of chunked streaming on both backend and frontend. This is a
+deliberate scope cut, not an oversight — SSE would be the first UX improvement to add
+with more time.

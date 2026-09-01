@@ -32,11 +32,10 @@ Two independent side-tasks are marked as subagent candidates.
 Independent of Phase 2's internals once the `/api/chat` contract is defined (request/response
 shape) — a subagent can build the static HTML/CSS/JS chat UI in parallel with backend work,
 as long as the API contract is agreed first.
-- [ ] Simple chat UI: message list, input box, send button
-- [ ] Wire to `/api/chat`, prefer SSE streaming for perceived responsiveness if time allows;
-      fall back to a single request/response if streaming eats too much time
-- [ ] Basic loading state, basic error state (see Phase 5)
-- [ ] Cadre-appropriate styling — clean, professional, B2B — not elaborate
+- [x] Simple chat UI: message list, input box, send button
+- [x] Wire to `/api/chat` — built as single request/response, not SSE (see note below)
+- [x] Basic loading state, basic error state (see Phase 5)
+- [x] Cadre-appropriate styling — clean, professional, B2B — not elaborate
 
 ## Phase 4 — Escalation flow (target: 30 min)
 - [ ] System prompt instructs the model: when a question falls outside the provided KB, say so

@@ -13,19 +13,19 @@ Two independent side-tasks are marked as subagent candidates.
 ## Phase 1 — Scaffold + deploy skeleton (target: 30 min)
 - [x] Minimal FastAPI app: one `GET /` route serving a static `index.html` placeholder, one
       `GET /health` route
-- [ ] Push to GitHub, connect to Railway/Render, get a live public URL working end-to-end
+- [x] Push to GitHub, connect to Railway/Render, get a live public URL working end-to-end
       **before** building real functionality — this is the "deploy early" step, do not skip it
-- [ ] Confirm env var (`OPENROUTER_API_KEY`) is set correctly on the platform
+- [x] Confirm env var (`OPENROUTER_API_KEY`) is set correctly on the platform
 
 ## Phase 2 — Core chat endpoint (target: 40 min)
-- [ ] `POST /api/chat` — accepts a user message (+ minimal conversation history), calls
+- [x] `POST /api/chat` — accepts a user message (+ minimal conversation history), calls
       OpenRouter async via `httpx`/SDK, returns the response
-- [ ] System prompt + KB content wired in from `backend/prompts.py` (see DECISIONS.md for what
+- [x] System prompt + KB content wired in from `backend/prompts.py` (see DECISIONS.md for what
       goes in the KB — company overview, booking, portal, AI Maturity Index, LLM/data security
       approach, escalation instruction)
-- [ ] Test with curl/httpie before touching the frontend — confirm the model is grounding
+- [x] Test with curl/httpie before touching the frontend — confirm the model is grounding
       answers in the KB and not hallucinating
-- [ ] Pick and lock in the OpenRouter model (cheap/fast — see DECISIONS.md open question),
+- [x] Pick and lock in the OpenRouter model (cheap/fast — see DECISIONS.md open question),
       log the decision once made
 
 ## Phase 3 — Frontend (target: 45 min) — SUBAGENT CANDIDATE
@@ -66,7 +66,7 @@ Run these manually against the live URL before calling it done:
 ## Phase 7 — Wrap-up (target: 10 min)
 - [ ] Final commit + push
 - [ ] Update DECISIONS.md: model chosen, any scope cut under time pressure, any known bugs left
-- [ ] Confirm README has setup + local run instructions
+- [ ] Confirm README has set up + local run instructions
 - [ ] Confirm live URL works from a fresh/incognito browser session (not just localhost)
 
 ---

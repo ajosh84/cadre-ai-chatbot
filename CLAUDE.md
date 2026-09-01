@@ -63,10 +63,11 @@ Facilitation, AI Engineering, AI Agents.
 ## How to run locally
 
 ```bash
-cd backend
-pip install -r requirements.txt   # or: uv sync, if using uv
-uvicorn app:app --reload --port 8000
+poetry install
+poetry run uvicorn backend.app:app --reload --port 8000
 ```
+Run from the project root (not `backend/`) — `backend/app.py` imports the knowledge base as
+`from backend.prompts import SYSTEM_PROMPT`, which needs the repo root on the Python path.
 Requires `.env` with `OPENROUTER_API_KEY` set.
 
 ## Full context

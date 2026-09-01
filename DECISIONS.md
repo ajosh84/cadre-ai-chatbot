@@ -109,10 +109,30 @@ of actually running it.
 
 ## Open questions / to revisit
 
-- [ ] Model choice for the chatbot itself (cost/quality tradeoff) — decide and log
+- [x] Model choice for the chatbot itself (cost/quality tradeoff) — decide and log
       reasoning here once picked.
 - [ ] Whether to add Postgres for lead capture in v1, or keep it to logging only.
 - [ ] Two or three specific real examples of Claude Code getting something wrong
-      during the actual build, and how you caught/fixed it (needed for Code Deep
-      Dive section — capture these live as they happen, don't reconstruct later).
-]()
+      during the actual build, and how I caught/fixed it (needed for Code Deep
+      Dive section — capture these live as they happen).
+
+## Model choice
+**Decision:** `openai/gpt-4o-mini` via OpenRouter.
+**Why:** Cheapest reliable option ($0.15/$0.60 per million tokens input/output) vs.
+Claude Haiku 4.5 ($1/$5) — meaningful difference given the fixed $5/7-day budget.
+Free-tier models considered and rejected: this bot is client-facing and needs consistent
+instruction-following (grounding, escalation behavior), which is worth paying a small
+amount for over free models with less predictable behavior.
+
+## Verification — Phase 2 manual test pass
+
+Tested via curl: 6 in-scope questions, 3 out-of-scope/escalation questions, 2 adversarial
+(prompt injection attempt, hostile tone), 1 multi-turn context check. All behaved correctly —
+grounded answers matched KB, escalation triggered on unknown/pricing questions without
+hallucinating, multi-turn history was used correctly, adversarial attempts did not break
+character or leak instructions.
+
+Also caught and fixed during this phase: `backend/app.py` initially imported
+`from prompts import SYSTEM_PROMPT` (module-not-found error) instead of
+`from backend.prompts import SYSTEM_PROMPT` — gave Claude Code the exact traceback,
+it corrected the import path immediately.

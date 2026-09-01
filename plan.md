@@ -7,11 +7,11 @@ Two independent side-tasks are marked as subagent candidates.
 ## Phase 0 — Setup (target: 15 min)
 - [x] Repo init, `.gitignore` (`.env`, `__pycache__`, etc.)
 - [x] `CLAUDE.md`, `plan.md`, `DECISIONS.md` committed first, before any app code
-- [ ] Add real dependencies to pyproject.toml: fastapi, uvicorn[standard], httpx, python-dotenv
+- [x] Add real dependencies to pyproject.toml: fastapi, uvicorn[standard], httpx, python-dotenv
       — run `poetry add fastapi "uvicorn[standard]" httpx python-dotenv`
-- [ ] `.env.example` with OPENROUTER_API_KEY= placeholder
+- [x] `.env.example` with OPENROUTER_API_KEY= placeholder
 ## Phase 1 — Scaffold + deploy skeleton (target: 30 min)
-- [ ] Minimal FastAPI app: one `GET /` route serving a static `index.html` placeholder, one
+- [x] Minimal FastAPI app: one `GET /` route serving a static `index.html` placeholder, one
       `GET /health` route
 - [ ] Push to GitHub, connect to Railway/Render, get a live public URL working end-to-end
       **before** building real functionality — this is the "deploy early" step, do not skip it

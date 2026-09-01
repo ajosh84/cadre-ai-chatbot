@@ -112,7 +112,12 @@ of actually running it.
 
 - [x] Model choice for the chatbot itself (cost/quality tradeoff) — decide and log
       reasoning here once picked.
-- [ ] Whether to add Postgres for lead capture in v1, or keep it to logging only.
+- [x] Whether to add Postgres for lead capture in v1, or keep it to logging only. **Resolved:
+      logging only.** Kept to stdout for the full build (see "Escalation / contact-capture
+      logging" above) — no time pressure forced this either way, it was the right scope call
+      from the start given the $5/4-hour budget and that stdout is already visible in
+      Railway/Render's platform logs. Postgres remains the documented next step if lead volume
+      or the need for structured querying grows (see plan.md's "If time remains" list).
 - [x] Two or three specific real examples of Claude Code getting something wrong
       during the actual build, and how I caught/fixed it (needed for Code Deep
       Dive section) — see "Bugs found during the build" below.
@@ -259,5 +264,24 @@ Results: no hallucinated pricing, case studies, or claims; no system-prompt leak
 the 3 injection attempts; tone stayed professional and on-brand under both hostile messages
 (no mirroring); multi-turn history correctly recalled context from 3 turns back; empty/oversized
 input correctly rejected with a clean `422`, no crash; non-English and gibberish input handled
-gracefully. One real bug found and fixed — see item 4 above. This pass ran against the local
-server only;
+gracefully. One real bug found and fixed — see item 3 above. This pass ran against the local
+server only; the live deployment was separately confirmed by spot-checking equivalent requests before final push.
+
+## Claude Code workflow choices: subagents and custom commands
+
+**Subagents:** Not used in this build. Most phases were genuinely sequential and dependent
+on each other (system prompt informs frontend contract, backend must work before adversarial
+testing, etc.) — plan.md flagged two phases (3 and 5) as subagent candidates, but given the
+4-hour window and that the "independent" work in each case was still fast enough to do
+directly, spinning up parallel subagents would have added coordination overhead without a
+clear time win at this scale. Subagents are the right call when independent tasks are each
+substantial enough that parallelizing saves real wall-clock time — worth revisiting if this
+project grew (e.g., building out a full test suite alongside a second feature).
+
+**Custom commands:** Not used. This was a single, one-off 4-hour build with no repeated
+workflows — custom commands pay off on tasks done more than once (a recurring deploy-check,
+a recurring test sweep, a recurring style-review). If this became an ongoing project, the
+adversarial test pass from Phase 6 is the clearest candidate — it was run twice, manually
+re-specified both times, and would be a natural first custom command
+(e.g. `/adversarial-test`) to save re-typing the full test list on every future change to
+the system prompt or KB.

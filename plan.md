@@ -75,10 +75,15 @@ messages — 23 requests total, all reviewed for hallucination/leakage/tone/cras
 found and fixed (see DECISIONS.md).
 
 ## Phase 7 — Wrap-up (target: 10 min)
-- [ ] Final commit + push
-- [ ] Update DECISIONS.md: model chosen, any scope cut under time pressure, any known bugs left
-- [ ] Confirm README has set up + local run instructions
-- [ ] Confirm live URL works from a fresh/incognito browser session (not just localhost)
+- [ ] Final commit + push — **not done by Claude**, per the new "Git discipline" rule in
+      CLAUDE.md: the developer stages/commits/pushes personally. Claude will suggest a commit
+      message when asked.
+- [x] Update DECISIONS.md: model chosen, any scope cut under time pressure, any known bugs left
+- [x] Confirm README has set up + local run instructions — `README.md` created (didn't exist
+      before), instructions verified against a real local run
+- [ ] Confirm live URL works from a fresh/incognito browser session (not just localhost) — not
+      verifiable from here: no browser-automation tool is connected in this environment, and
+      Claude doesn't have the deployed URL. Developer should confirm this manually.
 
 ---
 

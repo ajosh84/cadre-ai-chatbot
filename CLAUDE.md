@@ -59,10 +59,16 @@ Facilitation, AI Engineering, AI Agents.
 
 - FastAPI + vanilla JS frontend in one app, one deploy — chosen for speed and because it's a
   stack the developer already has production experience in. See DECISIONS.md.
-- Model for the chatbot itself: cheap, fast model via OpenRouter (confirm choice in
-  DECISIONS.md once picked) — budget is limited ($5) and needs to last through a live review.
+- Model for the chatbot itself: cheap, fast model via OpenRouter (see choice in
+  DECISIONS.md) — budget is limited ($5) and needs to last through a live review.
 - Escalation is handled via system-prompt instruction (model says "I don't know, here's how to
   reach a human"), not a separate intent-classification call. Simpler, one fewer moving part.
+
+## Git discipline
+
+Never run `git add`, `git commit`, or `git push`. All commits are made by the developer after
+they review the changes themselves. Claude may suggest a commit message when a logical chunk of
+work is done, but the developer decides when and what to stage or commit.
 
 ## How to run locally
 

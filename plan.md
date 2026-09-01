@@ -38,11 +38,11 @@ as long as the API contract is agreed first.
 - [x] Cadre-appropriate styling — clean, professional, B2B — not elaborate
 
 ## Phase 4 — Escalation flow (target: 30 min)
-- [ ] System prompt instructs the model: when a question falls outside the provided KB, say so
+- [x] System prompt instructs the model: when a question falls outside the provided KB, say so
       explicitly and ask for name/email (or point to a contact method) instead of guessing
-- [ ] Simple contact capture: log escalated conversations (stdout is fine for MVP — visible in
+- [x] Simple contact capture: log escalated conversations (stdout is fine for MVP — visible in
       platform logs). Note in DECISIONS.md this is where Postgres would go next.
-- [ ] Test explicitly: ask something clearly out of scope, confirm it escalates instead of
+- [x] Test explicitly: ask something clearly out of scope, confirm it escalates instead of
       making something up
 
 ## Phase 5 — Error handling + hardening (target: 30 min) — SUBAGENT CANDIDATE

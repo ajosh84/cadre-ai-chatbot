@@ -148,3 +148,30 @@ the 4-hour budget. A typing indicator provides adequate perceived responsiveness
 the added complexity of chunked streaming on both backend and frontend. This is a
 deliberate scope cut, not an oversight — SSE would be the first UX improvement to add
 with more time.
+
+## Escalation / contact-capture logging (Phase 4)
+**Decision:** Detect escalation heuristically — check the model's reply for the escalation
+wording from `SYSTEM_PROMPT` ("don't have that information", "name and email") — and print a
+single structured line (`ESCALATION: user asked '...' | response: '...'`) to stdout, grep-able
+out of Railway/Render logs.
+**Alternatives considered:** A separate classification call to detect escalation more reliably
+— rejected per the standing decision in CLAUDE.md to keep escalation a system-prompt instruction
+rather than a second model call; a substring check on the response the model already produced is
+"free" and consistent with that choice.
+**Why this wins:** No DB in v1 (see CLAUDE.md) — stdout is the lead-capture record for now.
+**Next step if this grows:** Postgres table for escalated conversations (message, reply,
+timestamp) so leads aren't only recoverable via log search.
+
+**Purpose and failure-mode priority:** This log is Cadre's follow-up queue of real leads the bot
+couldn't fully serve — every missed detection is a real prospective or existing client whose
+question never reaches a human. That makes under-detection (missing a genuine escalation) a more
+serious failure than over-detection (flagging something as an escalation when it wasn't quite
+one): a few extra lines in the log cost nothing to skim past, but a missed lead is gone. The
+marker set was broadened for exactly this reason after testing surfaced real cases the narrower
+original set missed — e.g. "Do you have any experience working with healthcare companies
+specifically on HIPAA compliance audits?" (model said "I can't confirm...") and "Can I speak to
+a specific person named John Smith on your team?" (model said "I'm unable to connect you
+directly...") — neither matched the original two markers, which were tied too tightly to the
+system prompt's primary phrasing rather than the range of ways the model actually declines.
+`ESCALATION_MARKERS` in `backend/app.py` now also covers "cannot provide", "can't confirm",
+"unable to provide", "I don't have", and "reaching out to the team".

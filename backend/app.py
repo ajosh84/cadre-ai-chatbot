@@ -21,6 +21,17 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 # Locked in per DECISIONS.md: cheapest reliable model for a fixed $5/7-day budget.
 MODEL = "openai/gpt-4o-mini"
 
+# Heuristic markers tied to the escalation wording in prompts.SYSTEM_PROMPT ("say plainly that
+# you don't have that information ... Ask for their name and email"). Simple substring check
+# instead of a separate classification call, per plan.md Phase 4 — retune if that wording changes.
+ESCALATION_MARKERS = ("don't have that information",
+                      "name and email",
+                      "cannot provide",
+                      "can't confirm",
+                      "unable to provide",
+                      "I don't have",
+                      "reaching out to the team")
+
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 app = FastAPI()
@@ -38,6 +49,17 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
+
+
+def log_if_escalation(message: str, reply: str) -> None:
+    lowered = reply.lower()
+    if not any(marker in lowered for marker in ESCALATION_MARKERS):
+        return
+    # Single-line, prefixed for easy `grep ESCALATION:` in Railway/Render logs — no DB in v1
+    # (see CLAUDE.md), so stdout is the lead-capture record for now.
+    safe_message = message.replace("\n", " ")
+    safe_reply = reply.replace("\n", " ")
+    print(f"ESCALATION: user asked '{safe_message}' | response: '{safe_reply}'")
 
 
 @app.get("/")
@@ -86,4 +108,5 @@ async def chat(payload: ChatRequest):
             "Please try again in a moment."
         )
 
+    log_if_escalation(payload.message, reply)
     return ChatResponse(response=reply)

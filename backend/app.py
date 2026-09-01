@@ -40,7 +40,7 @@ ESCALATION_MARKERS = ("don't have that information",
                       "name and email",
                       "cannot provide",
                       "can't confirm",
-                      "unable to provide",
+                      "unable to",
                       "I don't have",
                       "reaching out to the team")
 

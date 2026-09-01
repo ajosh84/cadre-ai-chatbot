@@ -231,3 +231,33 @@ in Open Questions above.
    by broadening the marker list (see "Escalation / contact-capture logging" above). Under-
    detection here is the more serious failure mode — a missed marker means a real lead never gets
    logged — so the fix erred toward a wider net over stricter matching.
+
+3. **Escalation detection still missed capability/account requests (Phase 6).** During the
+   Phase 6 adversarial pass, two genuine escalation cases went unlogged: a portal password-reset
+   request ("I'm unable to reset passwords for the client portal...") and a billing-email update
+   request ("I'm unable to assist with updating account details..."). Both are real declines that
+   redirect to the human team — exactly the kind of lead this log exists to capture — but neither
+   matched `ESCALATION_MARKERS`, because the existing `"unable to provide"` marker only covered
+   the informational-refusal phrasing from Phase 4's fix, not the different "I can't perform this
+   action" phrasing the model uses for account/capability requests. Caught by deliberately testing
+   an account-modification request as its own category, not just KB-knowledge gaps. Fixed by
+   broadening `"unable to provide"` to the more general `"unable to"`, which also covers "unable
+   to reset," "unable to assist," "unable to connect," etc. Verified the fix catches both
+   previously-missed cases and re-checked two in-scope answers (booking, company overview) to
+   confirm no new false positives — one candidate broadening, `"reach out to the team"`, was
+   rejected specifically because the booking answer's own "if the link isn't working, feel free
+   to reach out to the team at [email]" courtesy line would have false-positived on it.
+
+## Adversarial test pass summary (Phase 6)
+
+Ran 23 requests against the local server across 6 categories: the 6 required brief scenarios,
+3 out-of-scope/escalation questions (pricing, fabricated client name, account-modification
+request), 3 prompt-injection attempts, 4 edge cases (empty message, oversized message, Spanish,
+emoji/gibberish), a 4-turn multi-history conversation, and 2 hostile-tone messages.
+
+Results: no hallucinated pricing, case studies, or claims; no system-prompt leakage under any of
+the 3 injection attempts; tone stayed professional and on-brand under both hostile messages
+(no mirroring); multi-turn history correctly recalled context from 3 turns back; empty/oversized
+input correctly rejected with a clean `422`, no crash; non-English and gibberish input handled
+gracefully. One real bug found and fixed — see item 4 above. This pass ran against the local
+server only;

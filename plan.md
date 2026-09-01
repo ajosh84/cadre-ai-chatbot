@@ -57,15 +57,22 @@ failure modes while the main thread polishes the frontend.
 - [x] Cap on conversation history sent to OpenRouter per request (last 10 messages / 5
       exchanges) — added, not originally listed here; frontend still keeps the full thread for
       display. See DECISIONS.md.
-- [ ] Redeploy, confirm the live URL still works after all changes
+- [x] Redeploy, confirm the live URL still works after all changes
 
 ## Phase 6 — Adversarial test pass (target: 20 min)
 Run these manually against the live URL before calling it done:
-- [ ] A question just outside KB scope → should escalate gracefully, not hallucinate
-- [ ] A direct pricing question (not in KB) → should deflect appropriately, not invent a number
-- [ ] An off-topic/hostile message → should stay on-brand and redirect
-- [ ] One happy-path question from each of the 6 scenarios in the brief → confirm all work
-- [ ] Log any real bugs found + fixes in DECISIONS.md (needed for Code Deep Dive review section)
+- [x] A question just outside KB scope → should escalate gracefully, not hallucinate
+- [x] A direct pricing question (not in KB) → should deflect appropriately, not invent a number
+- [x] An off-topic/hostile message → should stay on-brand and redirect
+- [x] One happy-path question from each of the 6 scenarios in the brief → confirm all work
+- [x] Log any real bugs found + fixes in DECISIONS.md (needed for Code Deep Dive review section)
+
+Run against the **local** server (`poetry run uvicorn backend.app:app --reload --port 8000`),
+Also went further than the four items above: full exhaustive pass across 6 brief scenarios, out-of-scope/escalation (pricing, fabricated
+client, account-modification request), 3 prompt-injection attempts, 4 edge cases (empty,
+oversized, non-English, emoji/gibberish), a 4-turn history conversation, and 2 hostile-tone
+messages — 23 requests total, all reviewed for hallucination/leakage/tone/crashes, one real bug
+found and fixed (see DECISIONS.md).
 
 ## Phase 7 — Wrap-up (target: 10 min)
 - [ ] Final commit + push

@@ -113,9 +113,9 @@ of actually running it.
 - [x] Model choice for the chatbot itself (cost/quality tradeoff) — decide and log
       reasoning here once picked.
 - [ ] Whether to add Postgres for lead capture in v1, or keep it to logging only.
-- [ ] Two or three specific real examples of Claude Code getting something wrong
+- [x] Two or three specific real examples of Claude Code getting something wrong
       during the actual build, and how I caught/fixed it (needed for Code Deep
-      Dive section — capture these live as they happen).
+      Dive section) — see "Bugs found during the build" below.
 
 ## Model choice
 **Decision:** `openai/gpt-4o-mini` via OpenRouter.
@@ -175,3 +175,59 @@ directly...") — neither matched the original two markers, which were tied too 
 system prompt's primary phrasing rather than the range of ways the model actually declines.
 `ESCALATION_MARKERS` in `backend/app.py` now also covers "cannot provide", "can't confirm",
 "unable to provide", "I don't have", and "reaching out to the team".
+
+## Conversation history cap (Phase 5 hardening)
+
+**Decision:** `/api/chat` only forwards the last `MAX_HISTORY_MESSAGES = 10` entries of
+`history` (5 user/assistant exchanges) to OpenRouter, regardless of how long the client-side
+`history` array has grown. The frontend still keeps and renders the full thread — this is a
+server-side trim of what gets sent per request, not a UI limitation.
+
+**Why:** The Phase 5 message-length cap only bounded the *new* incoming message; `history` was
+still unbounded and resent in full on every turn, so cost grows linearly with conversation
+length and a long-running conversation could eventually exceed the model's context window.
+Capping at 10 is a fixed, cheap guard against both.
+
+**Verification:** Built a synthetic 14-message history with a distinct fact planted in the
+dropped range (indices 0–1, outside the last 10) and another in the kept range (indices 6–7,
+inside it). The model correctly forgot the dropped fact and correctly recalled the kept one,
+confirming the trim behaves as intended without breaking normal multi-turn context for
+conversations under the cap.
+
+**Trade-off:** A real conversation that leans on something said more than 5 exchanges back will
+lose that context — acceptable for this bot's short, FAQ-style support conversations.
+
+**Next step if this grows:** Currently, history is capped by keeping the last N turns — simple,
+zero added infra. With more time, I'd replace this with actual compaction: periodically
+summarizing older turns using a lightweight dedicated summarization model like BART (rather than
+spending a full chat-model call just to compress context), keeping token cost down while
+preserving the gist of earlier conversation. I've built this pattern before — BART/FlanT5 for
+summarization in a RAG pipeline — so this isn't hypothetical, it's the natural next step if
+conversation length in production warranted it.
+
+---
+
+## Bugs found during the build (pre-Phase 6)
+
+Consolidated here per plan.md Phase 6's "log any real bugs found" requirement, ahead of the
+adversarial test pass (which will surface any additional issues in `backend/app.py`'s actual
+chat behavior). The first two are also the "Claude Code getting something wrong" examples noted
+in Open Questions above.
+
+1. **Import path bug (Phase 1/2).** `backend/app.py` initially imported
+   `from prompts import SYSTEM_PROMPT`, which only resolves when uvicorn is launched from inside
+   `backend/`. Running the documented `poetry run uvicorn backend.app:app --reload --port 8000`
+   from the repo root failed with `ModuleNotFoundError: No module named 'prompts'`. Caught by
+   actually running the app and reading the traceback (not by inspection). Fixed to
+   `from backend.prompts import SYSTEM_PROMPT`, added `backend/__init__.py` to make `backend`
+   an explicit package, and corrected CLAUDE.md's "How to run locally" section, which had also
+   drifted — it still referenced `pip`/`uv sync`, not the Poetry setup actually in use.
+
+2. **Escalation detection under-coverage (Phase 4).** The initial `ESCALATION_MARKERS` list
+   (`"don't have that information"`, `"name and email"`) missed real escalation cases where the
+   model declined in different wording — e.g. a HIPAA-compliance question ("I can't confirm...")
+   and a request to speak to a named team member ("I'm unable to connect you directly..."). Caught
+   by testing adversarial phrasings rather than only the system prompt's primary wording. Fixed
+   by broadening the marker list (see "Escalation / contact-capture logging" above). Under-
+   detection here is the more serious failure mode — a missed marker means a real lead never gets
+   logged — so the fix erred toward a wider net over stricter matching.

@@ -20,6 +20,18 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 # Locked in per DECISIONS.md: cheapest reliable model for a fixed $5/7-day budget.
 MODEL = "openai/gpt-4o-mini"
+# Caps output length per request — protects the $5/7-day budget from a runaway or adversarial
+# response. SYSTEM_PROMPT already asks for "a few sentences to a short paragraph," so 500 tokens
+# is generous headroom for a normal answer while still bounding the worst case.
+MAX_RESPONSE_TOKENS = 500
+# Caps input length — an unbounded message is both a cost vector (charged per input token) and
+# a bad-experience vector (nothing in this support-chat use case needs a multi-page message).
+MAX_MESSAGE_LENGTH = 2000
+# Caps how much prior conversation gets sent to OpenRouter per request. The frontend keeps the
+# full thread for display, but an unbounded `history` re-sent on every turn grows cost linearly
+# with conversation length and can eventually exceed the model's context window. 10 messages =
+# 5 user/assistant exchanges — enough for this bot's short support-style conversations.
+MAX_HISTORY_MESSAGES = 10
 
 # Heuristic markers tied to the escalation wording in prompts.SYSTEM_PROMPT ("say plainly that
 # you don't have that information ... Ask for their name and email"). Simple substring check
@@ -43,7 +55,7 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(min_length=1, max_length=MAX_MESSAGE_LENGTH)
     history: list[ChatMessage] = Field(default_factory=list)
 
 
@@ -82,8 +94,11 @@ async def chat(payload: ChatRequest):
             response="Sorry, the chat service isn't configured correctly. Please try again later."
         )
 
+    # Keep only the most recent exchanges — see MAX_HISTORY_MESSAGES.
+    trimmed_history = payload.history[-MAX_HISTORY_MESSAGES:]
+
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-    messages += [{"role": m.role, "content": m.content} for m in payload.history]
+    messages += [{"role": m.role, "content": m.content} for m in trimmed_history]
     messages.append({"role": "user", "content": payload.message})
 
     try:
@@ -91,7 +106,7 @@ async def chat(payload: ChatRequest):
             resp = await client.post(
                 OPENROUTER_URL,
                 headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
-                json={"model": MODEL, "messages": messages},
+                json={"model": MODEL, "messages": messages, "max_tokens": MAX_RESPONSE_TOKENS},
             )
             resp.raise_for_status()
             data = resp.json()

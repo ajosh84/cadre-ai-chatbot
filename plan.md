@@ -48,10 +48,15 @@ as long as the API contract is agreed first.
 ## Phase 5 — Error handling + hardening (target: 30 min) — SUBAGENT CANDIDATE
 Can run somewhat independently once Phase 2's endpoint exists — a subagent can focus purely on
 failure modes while the main thread polishes the frontend.
-- [ ] OpenRouter call failures (timeout, rate limit, malformed response) → graceful message to
+- [x] OpenRouter call failures (timeout, rate limit, malformed response) → graceful message to
       user, not a raw 500
-- [ ] Basic response length cap / max token limit — protects the $5 budget from a runaway
+- [x] Basic response length cap / max token limit — protects the $5 budget from a runaway
       response or adversarial input
+- [x] Basic input validation on incoming message length (added, not originally listed here —
+      see below)
+- [x] Cap on conversation history sent to OpenRouter per request (last 10 messages / 5
+      exchanges) — added, not originally listed here; frontend still keeps the full thread for
+      display. See DECISIONS.md.
 - [ ] Redeploy, confirm the live URL still works after all changes
 
 ## Phase 6 — Adversarial test pass (target: 20 min)

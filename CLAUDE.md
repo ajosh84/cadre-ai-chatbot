@@ -39,6 +39,9 @@ Facilitation, AI Engineering, AI Agents.
   handling.
 - `/api/chat` returns a single JSON response (not SSE streaming) — a deliberate scope trade-off
   for the time budget, not a rejection of streaming on principle. See DECISIONS.md.
+- `/api/chat` only sends the last 10 history messages (5 exchanges) to OpenRouter, even though
+  the frontend keeps and displays the full thread — bounds per-request cost and avoids hitting
+  the model's context limit on long conversations. See DECISIONS.md.
 - Prefer small, focused commits with descriptive messages over one large commit at the end.
 
 ## Explicit boundaries — do not build these without asking

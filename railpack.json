@@ -1,5 +1,6 @@
 {
-  "packages": {
-    "apt": ["libexpat1"]
+  "$schema": "https://schema.railpack.com",
+  "deploy": {
+    "aptPackages": ["libexpat1"]
   }
 }

@@ -35,11 +35,23 @@ Run this from the project root, not `backend/` — `backend/app.py` imports the 
 
 Then open http://127.0.0.1:8000 in a browser for the chat UI, or check http://127.0.0.1:8000/health.
 
+## Running tests
+
+```bash
+poetry run pytest --html=report.html --self-contained-html
+```
+
+Runs the full test suite (`tests/test_app.py`) and writes a browsable report to `report.html`
+at the project root — open it directly in a browser, nothing to serve. Every OpenRouter call is
+mocked, so the suite runs offline and doesn't touch the API budget.
+
 ## Project structure
 
 - `backend/app.py` — FastAPI app: routes, OpenRouter integration, escalation logging
 - `backend/prompts.py` — system prompt and knowledge base content
 - `frontend/index.html` — chat UI (vanilla HTML/CSS/JS, no build step)
+- `tests/test_app.py` — automated test suite (routes, request shaping, failure handling,
+  escalation detection) — see "Running tests" above
 - `.env.example` — required environment variables
 
 ## Known Limitations

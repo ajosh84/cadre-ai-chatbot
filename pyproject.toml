@@ -13,6 +13,15 @@ httpx = "^0.28.1"
 python-dotenv = "^1.2.3"
 
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.1.1"
+pytest-html = "^4.2.0"
+
+[tool.pytest.ini_options]
+# Repo root isn't on sys.path by default under pytest's import mode (no tests/__init__.py),
+# so `from backend...` imports fail without this. Matches how uvicorn is run — from the root.
+pythonpath = ["."]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

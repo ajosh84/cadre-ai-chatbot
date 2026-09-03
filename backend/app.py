@@ -41,7 +41,7 @@ ESCALATION_MARKERS = ("don't have that information",
                       "cannot provide",
                       "can't confirm",
                       "unable to",
-                      "I don't have",
+                      "i don't have",
                       "reaching out to the team")
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"

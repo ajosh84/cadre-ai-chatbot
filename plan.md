@@ -85,6 +85,88 @@ found and fixed (see DECISIONS.md).
       verifiable from here: no browser-automation tool is connected in this environment, and
       Claude doesn't have the deployed URL. Developer should confirm this manually.
 
+## Phase 8 — Automated test suite (target: 30-40 min)
+Originally cut from the build (see "Explicitly cut" below) in favor of a manual adversarial
+pass under the 4-hour budget; revisited now that the MVP is stable. This reverses that scope
+cut — plan.md and DECISIONS.md get updated once it's done to reflect that explicitly, not just
+silently un-cut.
+
+- [x] Add `pytest` as a dev dependency: `poetry add --group dev pytest`. No other new
+      dependencies needed — FastAPI's `TestClient` (bundled with `fastapi`/`starlette`, backed
+      by `httpx`, already a dependency) covers HTTP-level testing, and `unittest.mock` (stdlib)
+      covers mocking the OpenRouter call. No `pytest-asyncio` or separate HTTP-mocking library
+      needed at this scope. `TestClient` is Starlette's test client (FastAPI re-exports it), so
+      every route/mock test below runs through the real ASGI app, not a hand-rolled stub.
+- [x] Also add `pytest-html` as a dev dependency (same command:
+      `poetry add --group dev pytest pytest-html`) — generates the human-readable test report
+      requested below. This is the one dependency addition in this phase beyond pytest itself;
+      justified because the report is an explicit deliverable, not incidental tooling.
+- [x] `tests/test_app.py` — single file for now, mirrors `backend/app.py`'s own "don't pre-split"
+      convention; split only if it actually grows. 26 tests total.
+- [x] Route-level tests (`GET /`, `GET /health`):
+  - `GET /health` → 200, `{"status": "ok"}`
+  - `GET /` → 200, serves `frontend/index.html`'s actual content
+- [x] `POST /api/chat` input validation tests — assert via mock call count that no OpenRouter
+      call happens for any rejected request:
+  - missing `message` field → 422
+  - empty `message` (`""`) → 422
+  - `message` over `MAX_MESSAGE_LENGTH` (2000 chars) → 422
+  - `message` exactly at the 2000-char boundary → accepted (200, mocked OpenRouter response)
+  - missing `history` field → defaults to `[]`, request still succeeds
+- [x] `POST /api/chat` request-shaping tests — mock the OpenRouter call, capture and assert on
+      the outgoing request payload:
+  - system message (`SYSTEM_PROMPT`) is always first in `messages`
+  - `history` entries are forwarded in order between the system message and the new user message
+  - `history` longer than `MAX_HISTORY_MESSAGES` (10) is trimmed to the last 10 entries only
+  - `max_tokens` is set to `MAX_RESPONSE_TOKENS` (500) on every request
+- [x] `POST /api/chat` happy-path test — mock a normal OpenRouter completion, assert the response
+      body is exactly `{"response": "<the mocked content>"}`
+- [x] `POST /api/chat` failure-handling tests — each should return `200` with a graceful message,
+      never a raw 500:
+  - mocked `httpx.TimeoutException` → graceful apology response
+  - mocked `httpx.HTTPStatusError` (e.g. a 401 or 429 from OpenRouter) → graceful apology
+    response
+  - mocked malformed OpenRouter response body (missing `choices` key) → graceful apology
+    response, confirms the `KeyError`/`IndexError` guard works
+  - `OPENROUTER_API_KEY` unset/empty → graceful config-error message, and assert the OpenRouter
+    call was never attempted
+- [x] `log_if_escalation()` unit tests — pure function, no HTTP mocking needed, use `capsys` to
+      assert on stdout:
+  - each marker in `ESCALATION_MARKERS` individually triggers a log line, in a reply that
+    otherwise looks like a real model response
+  - a normal in-scope-sounding reply with none of the markers → no log line
+  - a reply containing newlines → logged as a single flattened line (no literal newline breaking
+    grep-ability)
+  - the logged line's user-message and reply portions match `message`/`reply` exactly (minus the
+    newline flattening)
+  - **Found a real bug this way**: the `"I don't have"` marker (capital I) could never match
+    against the always-lowercased comparison string — dead since Phase 6. Fixed to
+    `"i don't have"`. See DECISIONS.md.
+- [x] Run `poetry run pytest --html=report.html --self-contained-html`, confirm all tests pass,
+      and confirm no test makes a real OpenRouter call — verify by running once with a
+      deliberately broken/missing API key; every test should still pass, since every OpenRouter
+      interaction is mocked. `--self-contained-html` embeds the CSS/JS inline so `report.html`
+      is a single portable file — open it directly in a browser, nothing to serve.
+  - **Not originally planned**: needed a `[tool.pytest.ini_options]` `pythonpath = ["."]` entry
+    in `pyproject.toml` — without it, pytest's default import mode (no `tests/__init__.py`) puts
+    `tests/` rather than the repo root on `sys.path`, so `from backend...` imports failed with
+    `ModuleNotFoundError`. One-line fix, same root cause pattern as the Phase 1/2 import bug.
+  - Result: **26 passed**, 0 failed (after the marker fix above), 1 warning (Starlette's
+    deprecation notice for `httpx`-backed `TestClient`, recommending `httpx2` — informational
+    only, not acted on; would need its own dependency evaluation if `httpx`-backed `TestClient`
+    is ever actually removed).
+- [x] Add `report.html` (and pytest's `.pytest_cache/`) to `.gitignore` — generated artifacts,
+      regenerated on every run, not committed.
+- [x] Update `README.md` with a "Running tests" section: the pytest command above, and that it
+      opens as `report.html` at the project root.
+- [x] Update `DECISIONS.md`: logged as reversing the earlier "no automated test suite" scope
+      cut, with reasoning, plus the case-sensitivity bug found via the suite.
+- [x] Updated this file's "Explicitly cut" list below to reflect that the test suite was
+      revisited in Phase 8, rather than leaving a stale "cut" note.
+
+Not committed — per the "Git discipline" rule in CLAUDE.md, staging/committing is left to the
+developer.
+
 ---
 
 ## Explicitly cut from this build (state these plainly, don't leave ambiguous)
@@ -93,7 +175,8 @@ found and fixed (see DECISIONS.md).
 - Vector DB / RAG — static KB injection instead (see DECISIONS.md)
 - Postgres / structured lead storage — stdout logging instead
 - Deployed K8s/autoscaling — reference-only, not part of this deploy
-- Automated test suite — manual adversarial pass only, given the time budget
+- Automated test suite — originally cut in favor of a manual adversarial pass given the time
+  budget; revisited in Phase 8 once the MVP was stable (see above)
 
 ## If time remains after Phase 7
 - Postgres for escalation/lead capture instead of stdout logging

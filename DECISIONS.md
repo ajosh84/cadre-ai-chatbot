@@ -253,6 +253,46 @@ in Open Questions above.
    rejected specifically because the booking answer's own "if the link isn't working, feel free
    to reach out to the team at [email]" courtesy line would have false-positived on it.
 
+4. **Dead escalation marker due to a case-sensitivity bug (Phase 8).** `log_if_escalation`
+   compares against `reply.lower()`, but one entry in `ESCALATION_MARKERS`, `"I don't have"`,
+   kept its capital I — so `marker in lowered` could never match, since `lowered` is always
+   fully lowercase. That marker had been silently dead since Phase 6; every reply it was meant
+   to catch instead fell through to whatever other marker happened to also match (or, in some
+   cases, to no marker at all). Caught immediately by the Phase 8 test suite: a parametrized test
+   asserting each marker in `ESCALATION_MARKERS` individually triggers a log line failed for
+   exactly this one. Fixed by lowercasing it to `"i don't have"`. This is the clearest concrete
+   example so far of the automated suite earning its keep over manual/adversarial testing alone —
+   a manual curl pass can miss a bug like this indefinitely if some other marker happens to also
+   match on the specific test phrasing used, while a per-marker parametrized test can't.
+
+## Automated test suite (Phase 8)
+
+**Decision:** Add `pytest` + `pytest-html` as dev dependencies and a `tests/test_app.py` suite
+(26 tests) covering `backend/app.py`'s routes, request shaping, failure handling, and
+`log_if_escalation()`, run via FastAPI's `TestClient` (Starlette's test client, re-exported).
+Every OpenRouter call is mocked (`httpx.AsyncClient.post`), so the suite runs offline and never
+touches the API budget — verified by running it once with the real `OPENROUTER_API_KEY` unset
+and confirming all 26 still pass.
+
+**This reverses the earlier "no automated test suite" scope cut** (see plan.md's "Explicitly
+cut" list, now updated). That cut was the right call under the original 4-hour budget — a manual
+adversarial pass was the higher-leverage use of limited time for an MVP that didn't exist yet.
+Revisited once the MVP was stable and had already been through a real adversarial pass (Phase 6):
+at that point the marginal cost of a focused test suite is low, and the payoff is concrete — see
+the case-sensitivity bug above, found within minutes of the suite existing, that had been latent
+since Phase 6's own testing.
+
+**What's covered vs. not:** All of `backend/app.py`'s testable logic (input validation, history
+trimming, max-token capping, OpenRouter failure paths, escalation detection) is covered. The
+frontend (`frontend/index.html`) is not — no browser-automation tool is available in this
+environment, so its coverage remains the manual/logic-review verification from Phase 3 and
+Phase 5, not automated tests. Model output quality (grounding, tone, escalation *phrasing*) also
+isn't tested here — that's what Phase 6's live adversarial pass covers, and it can't be mocked
+without losing its point.
+
+**Report:** `poetry run pytest --html=report.html --self-contained-html` produces a single
+portable HTML file at the project root (gitignored — it's a generated artifact, not source).
+
 ## Adversarial test pass summary (Phase 6)
 
 Ran 23 requests against the local server across 6 categories: the 6 required brief scenarios,
